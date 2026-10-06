@@ -1,0 +1,12 @@
+services:
+  app:
+    build:
+      context: .              # root — karena Dockerfile ada di sini, bukan di dalam src/
+      dockerfile: Dockerfile
+    container_name: laravel_app
+    volumes:
+      - ./src:/var/www       # bind mount tetap menunjuk khusus ke src/
+    networks:
+      - laravel_net
+    depends_on:
+      - db
