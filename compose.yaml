@@ -10,3 +10,54 @@ services:
       - laravel_net
     depends_on:
       - db
+
+  webserver:
+    image: nginx:alpine
+    container_name: laravel_nginx
+    ports:
+      - "8080:80"            # akses lewat http://localhost:8080
+    volumes:
+      - ./src:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - laravel_net
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0          # MySQL diambil langsung dari image resmi, tanpa Dockerfile
+    container_name: laravel_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: laravel       # nama database otomatis dibuat saat pertama kali start
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    volumes:
+      - db_data:/var/lib/mysql  # named volume, supaya data survive walau container dihapus
+    networks:
+      - laravel_net
+    ports:
+      - "3306:3306"          # opsional, hanya jika ingin akses dari tool database di host
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: laravel_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db              # menunjuk ke nama service MySQL, bukan localhost
+                            # PMA_USER & PMA_PASSWORD sengaja dikosongkan,
+                            # supaya form login tetap muncul (lihat catatan di bawah)
+    ports:
+      - "8081:80"            # akses lewat http://localhost:8081
+    networks:
+      - laravel_net
+    depends_on:
+      - db
+
+networks:
+  laravel_net:
+    driver: bridge   # jaringan virtual supaya app, webserver, db, phpmyadmin saling kenal
+
+volumes:
+  db_data:          # didaftarkan di sini supaya bisa dirujuk sebagai db_data:/var/lib/mysql di atas
