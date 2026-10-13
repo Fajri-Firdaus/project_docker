@@ -1,20 +1,10 @@
-FROM php:8.4-fpm
+# Satu Dockerfile dipakai bersama app1-php dan app2-php (compose.yaml).
+# Kode tidak di-COPY ke sini -- di-mount sebagai volume lewat compose.yaml.
+FROM php:8.3-fpm
 
-# Install dependency sistem & ekstensi PHP yang dibutuhkan Laravel
-RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev libzip-dev zip unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# Salin binary Composer dari image resmi Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libcurl4-openssl-dev \
+    && docker-php-ext-install curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www
-
-# Context adalah root, jadi folder src/ disalin secara eksplisit
-COPY ./src .
-
-RUN composer install --no-interaction --optimize-autoloader
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-
-EXPOSE 9000
-CMD ["php-fpm"]
